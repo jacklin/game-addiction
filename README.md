@@ -1,2 +1,2 @@
-# game-addiction
+# Game-addiction
 根据中国网络游戏防沉迷实名认证系统 接口对接技术规范开源项目
