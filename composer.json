@@ -13,5 +13,10 @@
             "email": "jacklin@shouyiren.net"
         }
     ],
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "autoload": {
+    "psr-4": {
+            "Game\\Addiction\\": "src/"
+        }
+    }
 }
