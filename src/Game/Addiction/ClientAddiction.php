@@ -18,6 +18,7 @@ class ClientAddiction
 	public $allowRedirects = false; //是否支持302|301跳转
 	public $headers = []; // 默认http头部信息
 	private $httpclient; //http请求客户端
+	private $response;//http响应数据
 	/**
 	 * 构造方法
 	 * BaZhang Platform
@@ -175,13 +176,42 @@ class ClientAddiction
      * @param    string                   $testCode 测试码
      * @return   [type]                             [description]
      */
-    public function testCheck(string $apiPath = '', string $ai, string $name, string $idNum, string $testCode)
+    public function testCheck(string $ai, string $name, string $idNum, string $testCode, string $apiPath = '')
     {
     	$apiPath = $apiPath ?: '/test/authentication/check';
-        $this->debug = true;
         $apiPath = $apiPath. "/" .$testCode;
         return $this->check($ai, $name, $idNum, $apiPath);
     }
+    /**
+     * 实名认证测试查询接口
+     * BaZhang Platform
+     * @Author   Jacklin@shouyiren.net
+     * @DateTime 2021-03-10T17:54:52+0800
+     * @param    string                   $ai       [description]
+     * @param    string                   $testCode [description]
+     * @return   [type]                             [description]
+     */
+    public function testQuery(string $ai, string $testCode)
+	{
+		$apiPath = $apiPath ?: '/test/authentication/query';
+		$apiPath = $apiPath. "/" .$testCode;
+		return $this->query($ai, $apiPath);
+	}
+	/**
+	 * 用户行为数据上报测试接口
+	 * BaZhang Platform
+	 * @Author   Jacklin@shouyiren.net
+	 * @DateTime 2021-03-10T17:58:21+0800
+	 * @param    array                    $data     [description]
+	 * @param    string                   $testCode [description]
+	 * @return   [type]                             [description]
+	 */
+	public function testReport(array $data, string $testCode)
+	{
+		$apiPath = $apiPath ?: '/test/collection/loginout';
+		$apiPath = $apiPath. "/" .$testCode;
+	    return $this->report($data, $uri);
+	}
     /**
      * 获取url链接参数
      * BaZhang Platform
@@ -229,6 +259,16 @@ class ClientAddiction
     	return $this->sign->generateSign($this->headers,json_decode($body,true),$query);
     }
     /**
+     * 返回http响应数据
+     * BaZhang Platform
+     * @Author   Jacklin@shouyiren.net
+     * @DateTime 2021-03-10T18:02:58+0800
+     * @return   [type]                   [description]
+     */
+    private function getRespone(){
+    	return $this->response;
+    }
+    /**
      * 请求数据
      * BaZhang Platform
      * @Author   Jacklin@shouyiren.net
@@ -245,7 +285,7 @@ class ClientAddiction
        		'body' => $body,
        		'header' => array_merge($this->headers, $header)
     	];
-        $response = $this->httpclient->request($method, $uri, $options);
-        return $response;
+        $this->response = $this->httpclient->request($method, $uri, $options);
+        return $this->getRespone();
     }
 }
