@@ -15,8 +15,8 @@
     ],
     "minimum-stability": "dev",
     "autoload": {
-    "psr-4": {
-            "Game\\": "src/Game"
-        }
+        "psr-4": {
+                "Game\\Addiction": "src/Game/Addiction"
+            }
     }
 }
