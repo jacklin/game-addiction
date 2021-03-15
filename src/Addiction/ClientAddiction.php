@@ -1,6 +1,6 @@
 <?php
 
-namespace Game;
+namespace Game\Addiction;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
