@@ -18,15 +18,15 @@ class Sign
 	 * @param array $query
 	 * @return string
 	 */
-	private function generateSign($system_params = [], $body = [], $query = [])
+	public function generateSign($system_params = [], $body, $query = [])
 	{
-	    $request = array_merge($system_params, $body, $query);
+	    $request = array_merge($system_params, $query);
 	    ksort($request);
 	    $str_join = '';
 	    foreach( $request as $key => $value) {
 	        $str_join .= $key.$value;
 	    }
-	    $toSign = $this->secretKey . $str_join . json_encode($body);
+	    $toSign = $this->secretKey . $str_join . $body;
 	    $sign = hash("sha256", $toSign);
 	    return $sign;
 	}

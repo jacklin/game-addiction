@@ -9,12 +9,14 @@ class AesBase64
 {
     private $key; //key
     private $cipherMethod; //密码学方式。openssl_get_cipher_methods() 可获取有效密码方式列表。 
-    private $iv; //非 NULL 的初始化向量
+    private $iv; //非 NULL 的初始化向量。 
+    private $ivlen; //iv 长度
     private $error; //错误信息
-    public function __construct($key, $cipherMethod, $iv){
-        $this->key = $key;
+    public function __construct($key, $cipherMethod, $iv="",$ivlen=0){
+        $this->key = hex2bin($key);
         $this->cipherMethod = $cipherMethod;
-        $this->iv = $iv
+        $this->ivlen = $ivlen >= 12 ? $ivlen : openssl_cipher_iv_length($this->cipherMethod);
+        $this->iv = $iv ? $iv : openssl_random_pseudo_bytes($this->ivlen);
     }
     /**
      * 加密方法
@@ -27,10 +29,11 @@ class AesBase64
     private function encrypt(string $plaintext){
         if (in_array($this->cipherMethod, openssl_get_cipher_methods()))
         {
-            $ciphertext = openssl_encrypt($plaintext, $this->cipherMethod, $this->key, $options=0, $this->iv);
+            $tag = null;
+            $ciphertext =  $this->iv . openssl_encrypt($plaintext, $this->cipherMethod, $this->key, OPENSSL_RAW_DATA, $this->iv, $tag) . $tag;
             return $ciphertext;
         }else{
-           $this->error = $this->cipherMethod . "does not exist openssl_get_cipher_methods() of return values"
+           $this->error = $this->cipherMethod . "does not exist openssl_get_cipher_methods() of return values";
             return false;
         }
     }
@@ -45,10 +48,13 @@ class AesBase64
     private function descrypt(string $ciphertext){
         if (in_array($this->cipherMethod, openssl_get_cipher_methods()))
         {
-            $plaintext = openssl_decrypt($ciphertext, $this->cipherMethod, $this->key, $options=0, $this->iv);
+            $iv   = substr($ciphertext, 0, $this->ivlen);
+            $data = substr($ciphertext, $this->ivlen, strlen($ciphertext) - 16 - $this->ivlen);
+            $tag  = substr($ciphertext, strlen($ciphertext) - 16);
+            $plaintext = openssl_decrypt($data, $this->cipherMethod, $this->key, OPENSSL_RAW_DATA, $iv, $tag);
             return $plaintext;
         }else{
-           $this->error = $this->cipherMethod . "does not exist openssl_get_cipher_methods() of return values"
+           $this->error = $this->cipherMethod . "does not exist openssl_get_cipher_methods() of return values";
             return false;
         }
     }
@@ -72,7 +78,7 @@ class AesBase64
      * @return   [type]                         [description]
      */
     public function descbase64($data){
-        return $this->descrypt(base64_encode($data));
+        return $this->descrypt(base64_decode($data));
     }
     /**
      * 获取错误
