@@ -18,7 +18,7 @@ class Sign
 	 * @param array $query
 	 * @return string
 	 */
-	public function generateSign($system_params = [], $body, $query = [])
+	public function generateSign($system_params = array(), $body, $query = array())
 	{
 	    $request = array_merge($system_params, $query);
 	    ksort($request);
