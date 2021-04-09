@@ -4,8 +4,6 @@ namespace Game\Addiction;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use http\Env\Request;
-
 /**
  * 
  */
@@ -19,9 +17,9 @@ class ClientAddiction
     public $uri = "https://api.wlc.nppa.gov.cn" ;
     public $timeout = 30; //请示超时
     public $debug = false; //是否Debug 
-    public $sections = array(); // 记录执行步骤
+    public $sections = []; // 记录执行步骤 
     public $allowRedirects = false; //是否支持302|301跳转
-    public $headers = array(); // 默认http头部信息
+    public $headers = []; // 默认http头部信息
     private static $httpclient; //http请求客户端
     private $response;//http响应数据
     /**
@@ -52,11 +50,11 @@ class ClientAddiction
     private function setHeaders(string $appId, string $bizId)
     {
         $this->sections[] = 'setHeaders';
-        $this->headers = array_merge(array(
+        $this->headers = array_merge([
             'appId' => $appId,
             'bizId' => $bizId,
             'timestamps' => (int)(microtime(true)*1000)
-        ));
+        ]);
         $this->debug(json_encode($this->headers));
     }
     public function setDebug($isDebug)
@@ -84,12 +82,12 @@ class ClientAddiction
      * @return   [type]                           [description]
      */
     private function createClient($config){
-        $config = $config ? $config : array(
+        $config = $config ? $config : [
             'base_uri'        =>  $this->uri,
             'timeout'         => $this->timeout,
             'allow_redirects' => $this->allowRedirects,
-        );
-        $client =  new \Guzzle\Http\Client($config['base_uri']);
+        ];
+        $client =  new Client($config);
         return $client;
     }
     /**
@@ -100,13 +98,12 @@ class ClientAddiction
      * @return   [type]                           [description]
      */
     public function getClient(){
-        $config  =  array(
+        $config  =  [
             'base_uri'        =>  $this->uri,
             'timeout'         => $this->timeout,
             'allow_redirects' => $this->allowRedirects,
-        );
-        $url_arr = parse_url($this->uri);
-        $key = $url_arr['host'];
+        ];
+        $key = parse_url($this->uri)['host'];
         if (isset(self::$httpclient[$key]) && self::$httpclient[$key] instanceof Client) {
             return self::$httpclient[$key];
         }else{
@@ -135,13 +132,13 @@ class ClientAddiction
      * @throws AESException
      * @throws GuzzleException
      */
-    public function check(string $ai, string $name, string $idNum, string $apiPath = null, $header=array('Content-Type' => 'application/json; charset=utf-8'))
+    public function check(string $ai, string $name, string $idNum, string $apiPath = '', $header=['Content-Type' => 'application/json; charset=utf-8'])
     {
         $apiPath = $apiPath ?: '/idcard/authentication/check';
         $query = $this->doQuery($apiPath);
-        $body = $this->doFormat(array('ai'=>$ai, 'name'=>$name, 'idNum'=>$idNum));
+        $body = $this->doFormat(['ai'=>$ai, 'name'=>$name, 'idNum'=>$idNum]);
         $sign = $this->doSign($body,$query);
-        $header = array_merge(array('sign' => $sign),$header);
+        $header = array_merge(['sign' => $sign],$header);
         return $this->doRequest('POST', $apiPath, $header, $body);
     }
     /**
@@ -160,14 +157,14 @@ class ClientAddiction
      * @param    array                    $header [description]
      * @return   [type]                           [description]
      */
-    public function query(string $ai, string $apiPath = null, $header=array('Content-Type' => 'application/json; charset=utf-8'))
+    public function query(string $ai, string $apiPath = '', $header=['Content-Type' => 'application/json; charset=utf-8'])
     {
-        $query = array('ai'=>$ai);
+        $query = ['ai'=>$ai];
         $apiPath = $apiPath ?: '/idcard/authentication/query' . "?" . http_build_query($query);
         $query = $this->doQuery($apiPath);
         $body = $this->doFormat($query);
         $sign = $this->doSign($body,$query);
-        $header = array_merge(array('sign' => $sign),$header);
+        $header = array_merge(['sign' => $sign],$header);
         return $this->doRequest('GET', $apiPath, $header, $body);
     }
     /**
@@ -180,25 +177,25 @@ class ClientAddiction
      * @param    array                    $header  [description]
      * @return   [type]                            [description]
      */
-    public function report($data, string $apiPath = null, $header=array('Content-Type' => 'application/json; charset=utf-8'))
+    public function report($data, string $apiPath = '', $header=['Content-Type' => 'application/json; charset=utf-8'])
     {
         $apiPath = $apiPath ?: '/behavior/collection/loginout';
-        $collections = array();
+        $collections = [];
         foreach($data as $key => $value) {
-            $tmp = array();
+            $tmp = [];
             $tmp['no'] = $key+1;
-            $tmp['si'] = isset($value['si']) ? $value['si'] : md5(uniqid(mt_rand(0,1000)));
+            $tmp['si'] = $value['si'] ??md5(uniqid(mt_rand(0,1000)));
             $tmp['bt'] = $value['bt'];
-            $tmp['ot'] = isset($value['ot']) ? $value['ot'] : time();
+            $tmp['ot'] = $value['ot'] ?? time();
             $tmp['ct'] = $value['ct'];
-            $tmp['di'] = isset($value['di']) ? $value['di'] : "";
-            $tmp['pi'] = isset($value['pi']) ? $value['pi'] : "";
+            $tmp['di'] = $value['di'] ?? "";
+            $tmp['pi'] = $value['pi'] ?? "";
             $collections['collections'][] = $tmp;
         }
         $query = $this->doQuery($apiPath);
         $body = $this->doFormat($collections);
         $sign = $this->doSign($body,$query);
-        $header = array_merge(array('sign' => $sign),$header);
+        $header = array_merge(['sign' => $sign],$header);
         return $this->doRequest('POST', $apiPath, $header, $body);
     }
     /**
@@ -213,7 +210,7 @@ class ClientAddiction
      * @param    string                   $testCode 测试码
      * @return   [type]                             [description]
      */
-    public function testCheck(string $ai, string $name, string $idNum, string $testCode, string $apiPath = null)
+    public function testCheck(string $ai, string $name, string $idNum, string $testCode, string $apiPath = '')
     {
         $apiPath = $apiPath ?: '/test/authentication/check';
         $apiPath = $apiPath. "/" .$testCode;
@@ -231,7 +228,7 @@ class ClientAddiction
     public function testQuery(string $ai, string $testCode)
     {
         $apiPath = '/test/authentication/query';
-        $query = array('ai' => $ai);
+        $query = ['ai' => $ai ];
         $apiPath = $apiPath. "/" .$testCode . "?" . http_build_query($query) ;
         return $this->query($ai, $apiPath);
     }
@@ -262,12 +259,12 @@ class ClientAddiction
     {
         $this->setHeaders($this->appId, $this->bizId);
         $parse_api_path = explode('?', $apiPath);
-        $query = array();
+        $query = [];
         if ($parse_api_path && isset($parse_api_path[1])) {
             parse_str($parse_api_path[1],$query);
             return $query;
         }else{
-            return array();
+            return [];
         }
     }
     /**
@@ -281,15 +278,7 @@ class ClientAddiction
     private function doFormat($body)
     {
         $this->sections[] = 'doFormat_body_before';
-        if(version_compare(PHP_VERSION,'5.4.0','<')){
-            $str = json_encode($body);
-            $str = preg_replace_callback("#\\\u([0-9a-f]{4})#i",function($matchs){
-                return iconv('UCS-2BE', 'UTF-8', pack('H4', $matchs[1]));
-            },$str);
-            $body = $str;
-        }else{
-            $body = json_encode($body, JSON_UNESCAPED_UNICODE);
-        }
+        $body = json_encode($body, JSON_UNESCAPED_UNICODE);
         $this->debug($body);
         $body = '{"data":"' . $this->aesbase64->encbase64($body) . '"}';
         $this->sections[] = 'doFormat_body_after';
@@ -305,7 +294,7 @@ class ClientAddiction
      * @param    [type]                   $query [description]
      * @return   [type]                          [description]
      */
-    private function doSign($body,$query = array())
+    private function doSign($body,$query = [])
     {
         $this->sections[] = 'doSign';
         $sign = $this->sign->generateSign($this->headers,$body,$query);
@@ -333,21 +322,19 @@ class ClientAddiction
      * @param    string                    $body   请求体
      * @return   [type]                           返回响应内容
      */
-    public function doRequest(string $method, string $uri, array $header = array(), string $body = null)
+    public function doRequest(string $method, string $uri, array $header = [], string $body = "")
     {
-        $options = array(
+        $options = [
             'body' => $body,
             'headers' => array_merge($this->headers, $header)
-        );
+        ];
         $this->sections[] = 'doRequest';
         $this->debug(json_encode($options));
-        $request = $this->getClient()->$method($uri, $options['headers'], $options['body'], $options);
-        $this->response = $request->send();
-        $this->response->getBody();
-        $this->response->getHeader('Content-Length');
+        $this->response = $this->getClient()->request($method, $uri, $options);
+        $content = $this->getRespone()->getBody()->getContents();
         $this->sections[] = 'doRequest_response';
-        $this->debug($this->response->json());
-        return $this->response->json();
+        $this->debug($content);
+        return $content;
     }
     public function __destruct()
     {
